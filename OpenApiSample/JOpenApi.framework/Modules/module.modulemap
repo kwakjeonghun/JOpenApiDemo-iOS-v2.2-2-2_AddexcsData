@@ -1,0 +1,11 @@
+framework module JOpenApi {
+  umbrella header "JOpenApi.h"
+
+  export *
+  module * { export * }
+}
+
+module JOpenApi.Swift {
+    header "JOpenApi-Swift.h"
+    requires objc
+}
