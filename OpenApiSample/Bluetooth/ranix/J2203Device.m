@@ -41,6 +41,7 @@
 @property (nonatomic, strong) NSArray *execArgs;
 //내가 추가한 것
 @property (nonatomic, strong) ExcsStatus *excsStatus;
+@property (nonatomic, strong) HeartRateArr *arrDynamic;
 @end
 
 @implementation J2203Device
@@ -62,7 +63,9 @@
     self.deviceInfo = [NSMutableDictionary new];
     self.arrHeartRate = [[HeartRateArr alloc] init];
     self.activity = [[Act alloc] init];
+    //내가 추가한 것
     self.excsStatus = [[ExcsStatus alloc] init];
+    self.arrDynamic = [[HeartRateArr alloc] init];
     //jBleManager의 peripheralDelegate를 해당 클래스로 변경
     jBleManager.peripheralDelegate = self;
     
@@ -94,9 +97,9 @@
 }
 
 - (BOOL)checkDiscoverService {
-//    if (self.isDiscovered == NO) {
-//        return NO;
-//    }
+    //    if (self.isDiscovered == NO) {
+    //        return NO;
+    //    }
     if ([jBleManager activePeripheral] == nil) {
         return NO;
     }
@@ -133,7 +136,7 @@
     [self.activity setBroadcastId:@""];
     [self.activity setMeasrHour:@""];
 }
-
+//내가 추가한 것
 - (void)initExcs {
     [self.excsStatus setExcsStartDe:@""];
     [self.excsStatus setExcsStartTm:@""];
@@ -157,6 +160,18 @@
     [self.excsStatus setMinHeartRate:@0];
     [self.excsStatus setAutoManuClf:@"M"];
 }
+//내가 추가한 것
+- (void)initDynamicHR {
+    [self.arrDynamic setStartTm:@""];
+    [self.arrDynamic setStartDe:@""];
+    [self.arrDynamic setCollectTime:@5];
+    [self.arrDynamic setMaxHeartRate:@0];
+    [self.arrDynamic setMinHeartRate:@0];
+    [self.arrDynamic setAvgHeartRate:@0];
+    [self.arrDynamic setHeartRateCnt:@0];
+    [self.arrDynamic setHeartRateList:@""];
+}
+
 - (void)readSyncData {
     self.targetFunc = TARGET_FUNC_SYNC;
     if ([self checkDiscoverService] == NO) {
@@ -172,6 +187,7 @@
     [self initHeartRate];
     //내가 추가한 것
     [self initExcs];
+    [self initDynamicHR];
     
     [self setTime];
     
@@ -216,11 +232,21 @@
     [[NewBle sharedManager] enable];
     [[NewBle sharedManager] writeValue:SERVICE characteristicUUID:SEND_CHAR p:[jBleManager activePeripheral] data:data];
 }
-
+//내가 추가한 것
 - (void)readExerciseData: (int)mode {
     NSLog(@"PedometerDevice.readExerciseData");
     self.strText = @"";
     NSData * data = [[BleSDK sharedManager] GetActivityModeDataWithMode:mode withStartDate:nil];
+    
+    [NewBle sharedManager].activityPeripheral = [jBleManager activePeripheral];
+    [[NewBle sharedManager] enable];
+    [[NewBle sharedManager] writeValue:SERVICE characteristicUUID:SEND_CHAR p:[jBleManager activePeripheral] data:data];
+}
+//내가 추가한 것
+- (void)readDynamicHRData: (int)mode {
+    NSLog(@"PedometerDevice.readDynamicHRData");
+    self.strText = @"";
+    NSData * data = [[BleSDK sharedManager] GetContinuousHRDataWithMode:mode withStartDate:nil];
     
     [NewBle sharedManager].activityPeripheral = [jBleManager activePeripheral];
     [[NewBle sharedManager] enable];
@@ -236,7 +262,7 @@
     }
     NSLog(@"PedometerDevice.execCall");
     self.strText = @"";
-   
+    
     NSString *mode = args[0];
     MyNotifier notifier;
     
@@ -265,7 +291,7 @@
     }
     NSLog(@"PedometerDevice.execSMS");
     self.strText = @"";
-   
+    
     MyNotifier notifier;
     
     notifier.title = args[0];
@@ -288,7 +314,7 @@
     }
     NSLog(@"PedometerDevice.execSNS");
     self.strText = @"";
-   
+    
     MyNotifier notifier;
     
     notifier.title = args[1];
@@ -325,39 +351,39 @@
     }
     NSLog(@"PedometerDevice.setDeviceInfo");
     self.strText = @"";
-
+    
     NSMutableData *data;
     MyDeviceInfo deviceInfo;
     // deviceInfo setting
     if (jBleManager.activeDeviceUser != nil) {
-//        // 밴드 회전
-//        if ([jBleManager.activeDeviceUser.turnOnMode isEqual: @"Y"]) {
-//            deviceInfo.wristOn = 1;
-//        }
-//        else {
-//            deviceInfo.wristOn = 0;
-//        }
-//        // 전화 알림
-//        if ([jBleManager.activeDeviceUser.notiTel isEqual: @"Y"]) {
-//            deviceInfo.notificationType.call = 1;
-//        }
-//        else {
-//            deviceInfo.notificationType.call = 0;
-//        }
-//        // sms 알림
-//        if ([jBleManager.activeDeviceUser.notiSms isEqual: @"Y"]) {
-//            deviceInfo.notificationType.SMS = 1;
-//        }
-//        else {
-//            deviceInfo.notificationType.SMS = 0;
-//        }
-//        // 타임표시 설정
-//        if ([jBleManager.activeDeviceUser.notiSms isEqual: @"F1"]) {
-//            deviceInfo.timeUnit = 0;
-//        }
-//        else {
-//            deviceInfo.timeUnit = 1;
-//        }
+        //        // 밴드 회전
+        //        if ([jBleManager.activeDeviceUser.turnOnMode isEqual: @"Y"]) {
+        //            deviceInfo.wristOn = 1;
+        //        }
+        //        else {
+        //            deviceInfo.wristOn = 0;
+        //        }
+        //        // 전화 알림
+        //        if ([jBleManager.activeDeviceUser.notiTel isEqual: @"Y"]) {
+        //            deviceInfo.notificationType.call = 1;
+        //        }
+        //        else {
+        //            deviceInfo.notificationType.call = 0;
+        //        }
+        //        // sms 알림
+        //        if ([jBleManager.activeDeviceUser.notiSms isEqual: @"Y"]) {
+        //            deviceInfo.notificationType.SMS = 1;
+        //        }
+        //        else {
+        //            deviceInfo.notificationType.SMS = 0;
+        //        }
+        //        // 타임표시 설정
+        //        if ([jBleManager.activeDeviceUser.notiSms isEqual: @"F1"]) {
+        //            deviceInfo.timeUnit = 0;
+        //        }
+        //        else {
+        //            deviceInfo.timeUnit = 1;
+        //        }
         // target walk step
         NSNumber *targetWalk = jBleManager.activeDeviceUser.targetWalk;
         int nTargetWalk = [targetWalk intValue];
@@ -383,7 +409,7 @@
     [self.deviceInfo setValue:@"V3.7.8.0_2023/12/21" forKey:JConstantsCoreData.BLEDEVICE_KEY_FIRMWAREVERSION];
     [self.deviceInfo setValue:@"J2203" forKey:JConstantsCoreData.BLEDEVICE_KEY_MODELNUMBER];
     [jBleManager pairDevice:jBleManager.activePeripheral deviceInfo:self.deviceInfo deviceType:JENUMDeviceServiceTypePedometer];
-
+    
 }
 
 - (void)execute:(unsigned int)cmd args:(NSArray *)args{
@@ -412,7 +438,7 @@
         NSLog(@"PedometerDevice.BAND_EXEC_SYNCDATA");
         //todo 데이터 수신 및 변환작업 후 콜백 호출
         // JENUMCommandClassifyBAND_EXEC_SYNCDATA 는 jBleManager deviceSyncData 호출
-//        [jBleManager deviceSyncData:nil deviceType:JENUMDeviceServiceTypeUnknown];
+        //        [jBleManager deviceSyncData:nil deviceType:JENUMDeviceServiceTypeUnknown];
         [self readSyncData];
     }else if(cmd == JENUMCommandClassifyBAND_EXEC_OTA_MODE){
         NSLog(@"PedometerDevice.BAND_EXEC_OTA_MODE");
@@ -420,8 +446,8 @@
         if(cnt > 0){
             NSLog(@"Version=%@",args[0]);
         }
-
-
+        
+        
         //1. 현재 디바이스의 firmware버전 가져오기
         //2-1. args[0]으로 들어온 버전과 비교하여 firmware버전이 낮을 경우 : 펌웨어 파일 다운로드 실행
         //2-2. args[0]으로 들어온 버전과 비교하여 firmware버전이 같거나 높을 경우 바로 콜백호출하여 종료
@@ -462,7 +488,7 @@
     }
     
     //[jBleManager.activePeripheral discoverServices:nil];
-   
+    
 }
 
 -(void)parseRecvData: (NSData *)data {
@@ -472,6 +498,7 @@
     BOOL end = deviceData.dataEnd;
     
     if(deviceData.dataType == SetDeviceTime) {
+        //기존 순서 1. Single HR 2. Act 3. Excs 4. Dynamic HR
         [self readHeartRate:DEVICE_DATA_MODE_START];
     }
     else if(deviceData.dataType == SetNotify) {
@@ -491,7 +518,7 @@
             
             NSLog(@"TotalActivityData : %@", self.strText);
             Act *act = [[Act alloc] init];
-
+            
             NSString *strDate = dic[@"date"];
             NSDate *date = [[MyDate sharedManager] dateFromString:strDate WithStringFormat:@"YYYY.MM.dd"];
             
@@ -565,26 +592,27 @@
             }
         }
         
-//        for (int i = 0; i< arrayStaticHR.count; i++) {
-//            NSString * strTemp;
-//            NSDictionary * dic = arrayStaticHR[i];
-//            strTemp = [NSString stringWithFormat:@"date : %@\nheartbeatPerMinute : %@\n\n\n",dic[@"date"],dic[@"singleHR"]];
-//            self.strText  = [self.strText stringByAppendingString:strTemp];
-//            if (i == 0) {
-//                NSLog(@"StaticHR : %@", self.strText);
-//                NSString *strDate = dic[@"date"];
-//                NSDate *date = [[MyDate sharedManager] dateFromString:strDate WithStringFormat:@"YYYY.MM.dd HH:mm:ss"];
-//                HeartRate *hr = [[HeartRate alloc] init];
-//                [hr setMeasrDe:[[MyDate sharedManager] stringFromDate:date WithStringFormat:@"YYYYMMdd"]];
-//                [hr setMeasrTm:[[MyDate sharedManager] stringFromDate:date WithStringFormat:@"HHmmss"]];
-//                NSNumber *numHr = dic[@"singleHR"];
-//                [hr setHeartRate:[numHr stringValue]];
-//
-//                [jBleManager deviceSyncData:hr deviceType:JENUMDeviceServiceTypePedometer];
-//                return;
-//            }
-//        }
+        //        for (int i = 0; i< arrayStaticHR.count; i++) {
+        //            NSString * strTemp;
+        //            NSDictionary * dic = arrayStaticHR[i];
+        //            strTemp = [NSString stringWithFormat:@"date : %@\nheartbeatPerMinute : %@\n\n\n",dic[@"date"],dic[@"singleHR"]];
+        //            self.strText  = [self.strText stringByAppendingString:strTemp];
+        //            if (i == 0) {
+        //                NSLog(@"StaticHR : %@", self.strText);
+        //                NSString *strDate = dic[@"date"];
+        //                NSDate *date = [[MyDate sharedManager] dateFromString:strDate WithStringFormat:@"YYYY.MM.dd HH:mm:ss"];
+        //                HeartRate *hr = [[HeartRate alloc] init];
+        //                [hr setMeasrDe:[[MyDate sharedManager] stringFromDate:date WithStringFormat:@"YYYYMMdd"]];
+        //                [hr setMeasrTm:[[MyDate sharedManager] stringFromDate:date WithStringFormat:@"HHmmss"]];
+        //                NSNumber *numHr = dic[@"singleHR"];
+        //                [hr setHeartRate:[numHr stringValue]];
+        //
+        //                [jBleManager deviceSyncData:hr deviceType:JENUMDeviceServiceTypePedometer];
+        //                return;
+        //            }
+        //        }
     }
+    //내가 추가한 것
     else if(deviceData.dataType == ActivityModeData) {
         NSDictionary * dicData = deviceData.dicData;
         NSArray * arrayStaticHR = dicData[@"arrayActivityModeData"];
@@ -600,6 +628,25 @@
             }
             else {
                 [self readExerciseData:DEVICE_DATA_MODE_CONTINUE];
+            }
+        }
+    }
+    //내가 추가한 것
+    else if(deviceData.dataType == DynamicHR) {
+        NSDictionary * dicData = deviceData.dicData;
+        NSArray * arrayStaticHR = dicData[@"arrayContinuousHR"];
+        self.dataCount += 1;
+        [self.listData addObjectsFromArray:arrayStaticHR];
+        if (end == YES) {
+            [self parseDynamicHRDataValues];
+        }
+        if (self.dataCount == 50) {
+            self.dataCount = 0;
+            if (end == YES) {
+                [self parseDynamicHRDataValues];
+            }
+            else {
+                [self readDynamicHRData:DEVICE_DATA_MODE_CONTINUE];
             }
         }
     }
@@ -674,7 +721,7 @@
     [self.arrHeartRate setHeartRateList:hrValArr];
     
     [jBleManager deviceSyncData:self.arrHeartRate deviceType:JENUMDeviceServiceTypePedometer];
-
+    
     self.dataCount = 0;
     [self.listData removeAllObjects];
     [self readDetailAct:DEVICE_DATA_MODE_START];
@@ -686,12 +733,12 @@
     NSString *measrHr = @"";
     int actCnt = 0;
     int totActCnt = 0;
-
+    
     int totActTm = 0;
-
+    
     int actDstc = 0;
     int totActDstc = 0;
-
+    
     double actCal = 0;
     double totActCal = 0;
     
@@ -784,7 +831,7 @@
     [self readExerciseData:DEVICE_DATA_MODE_START];
 }
 
-//내가 추가한 것
+//내가 추가한 것(운동 데이터 누적(심박데이터 이상함))
 - (void)parseActivityModeDataValues {
     NSString *time = @"";
     int HR = 0;
@@ -843,6 +890,12 @@
             NSString *endDateString = [self getEndDate:time duration:iActTm];
             NSArray *endDateComponents = [endDateString componentsSeparatedByString:@" "];
             
+            NSString *combinedPace = [NSString stringWithFormat:@"%d.%02d", iPaceMinutes, iPaceSeconds];
+            
+            NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init];
+            formatter.numberStyle = NSNumberFormatterDecimalStyle;
+            NSNumber *numericValue = [formatter numberFromString:combinedPace];
+            double iPacedouble = [numericValue doubleValue];
             
             [self.excsStatus setExcsStartDe:[excsDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
             [self.excsStatus setExcsStartTm:[excsDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
@@ -854,8 +907,8 @@
             [self.excsStatus setRestTm:@0];
             [self.excsStatus setMaxCal:@0];
             [self.excsStatus setTotCal:[NSNumber numberWithInt:dCal]];
-            [self.excsStatus setMaxPace:[NSNumber numberWithInt:iPaceMinutes]]; // iPaceMinutes'iPaceSeconds 로 변경하기
-            [self.excsStatus setAvgPace:[NSNumber numberWithInt:iPaceSeconds]]; // iPaceMinutes'iPaceSeconds 로 변경하기
+            [self.excsStatus setMaxPace:[NSNumber numberWithDouble:iPacedouble]]; // iPaceMinutes'iPaceSeconds 로 변경하기
+            [self.excsStatus setAvgPace:[NSNumber numberWithDouble:iPacedouble]]; // iPaceMinutes'iPaceSeconds 로 변경하기
             [self.excsStatus setMaxAltitude:@0];
             [self.excsStatus setAvgAltitude:@0];
             [self.excsStatus setMaxPitch:@0];
@@ -865,22 +918,231 @@
             [self.excsStatus setAvgHeartRate:[NSNumber numberWithInt:HR]];
             [self.excsStatus setAutoManuClf:@"M"];
             /*
-            if ([ActivityMode isEqualToString:@"Run"]) {
-                [self.excsStatus setExcsClf:@(Run)];
-            } else if ([ActivityMode isEqualToString:@"Cycle"]) {
-                [self.excsStatus setExcsClf:@(Cycling)];
-            } else {
-                [self.excsStatus setExcsClf:@(Walk)];
-            }
-            */
-            [jBleManager deviceSyncData:self.excsStatus deviceType:JENUMDeviceServiceTypePedometer];
+             if ([ActivityMode isEqualToString:@"Run"]) {
+             [self.excsStatus setExcsClf:@(Run)];
+             } else if ([ActivityMode isEqualToString:@"Cycle"]) {
+             [self.excsStatus setExcsClf:@(Cycling)];
+             } else {
+             [self.excsStatus setExcsClf:@(Walk)];
+             }
+             */
+            //[jBleManager deviceSyncData:self.excsStatus deviceType:JENUMDeviceServiceTypePedometer]; //모든 데이터 출력할 때
         }
     }
     
-        
+    [jBleManager deviceSyncData:self.excsStatus deviceType:JENUMDeviceServiceTypePedometer]; // 최근 데이터만 출력할 때
+    self.dataCount = 0;
+    [self.listData removeAllObjects];
+    [self readDynamicHRData:DEVICE_DATA_MODE_START];
+}
+- (void)parseDynamicHRDataValues {
+    NSString *time = @"";
+    NSString *heartValue = @"";
+    NSString *hrValArr = @"";
+    int avrHr = 0;
+    int maxHr = 0;
+    int minHr = 200;
+    int totHR = 0;
+    int hr = 0;
+    NSString *last_date = @"";
+    NSString *check_date = @"";
+    
+    NSMutableArray *arrHR = [[NSMutableArray alloc] init];
+    
+    int nonZeroCount = 0;
+    
+    if (self.listData.count > 0) {
+        NSDictionary *map = self.listData[0];
+        NSString *time2 = map[@"date"];
+        check_date = [time2 substringWithRange:NSMakeRange(0, 10)];
+        last_date = time2;
+    }
+    
+    for (int i = 0; i < self.listData.count; i++) {
+        NSDictionary *map = self.listData[i];
+        time = map[@"date"];
+        heartValue = map[@"arrayHR"];
+        if ([heartValue isKindOfClass:[NSArray class]]) {
+            NSArray *hrArray = (NSArray *)heartValue;
+            
+            NSString *strDate = [time substringWithRange:NSMakeRange(0, 10)];
+            if ([strDate isEqualToString:check_date]) {
+                for (NSNumber *number in hrArray) {
+                    if ([number isKindOfClass:[NSNumber class]]) {
+                        [arrHR addObject:number];
+                    }
+                }
+            }
+        }
+    }
+    
+    for (int k = 0; k < arrHR.count; k++) {
+        NSNumber *hr = arrHR[k];
+        int nHr = [hr intValue];
+        if (nHr != 0) {
+            nonZeroCount++;
+            if (maxHr < nHr) {
+                maxHr = nHr;
+            }
+            if (minHr > nHr) {
+                minHr = nHr;
+            }
+            totHR += nHr;
+        }
+        if (k == 0) {
+            hrValArr = [NSString stringWithFormat:@"%d", nHr];
+        }
+        else {
+            NSString *strTemp = [NSString stringWithFormat:@",%d", nHr];
+            hrValArr = [hrValArr stringByAppendingString:strTemp];
+        }
+    }
+    avrHr = totHR / nonZeroCount;
+    
+    NSArray *arrDate = [last_date componentsSeparatedByString:@" "];
+    [self.arrDynamic setStartTm:[arrDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
+    [self.arrDynamic setStartDe:[arrDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
+    [self.arrDynamic setCollectTime:[NSNumber numberWithInt:5]];
+    [self.arrDynamic setMaxHeartRate:[NSNumber numberWithInt:maxHr]];
+    [self.arrDynamic setMinHeartRate:[NSNumber numberWithInt:minHr]];
+    [self.arrDynamic setAvgHeartRate:[NSNumber numberWithInt:avrHr]];
+    [self.arrDynamic setHeartRateCnt:[NSNumber numberWithInt:arrHR.count]];
+    [self.arrDynamic setHeartRateList:hrValArr];
+    
+    [jBleManager deviceSyncData:self.arrDynamic deviceType:JENUMDeviceServiceTypePedometer];
+    
     self.dataCount = 0;
     [self.listData removeAllObjects];
 }
+//- (void)parseActivityModeDataValues {
+//    NSString *time = @"";
+//    int HR = 0;
+//    
+//    NSString *step = @"";
+//    int iStep = 0;
+//    NSString *distance = @"";
+//    int iDistance = 0;
+//    NSString *cal = @"";
+//    double dCal = 0.0;
+//    
+//    NSString *heartValue = @"";
+//    NSString *paceMinutes = @"";
+//    int iPaceMinutes = 0;
+//    NSString *paceSeconds = @"";
+//    int iPaceSeconds = 0;
+//    
+//    NSMutableArray *arrPace = [[NSMutableArray alloc] init];
+//    NSMutableArray *arrHR = [[NSMutableArray alloc] init];
+//    
+//    NSString *actTm = @"";
+//    int iActTm = 0;
+//    NSString *ActivityMode = @"";
+//    
+//    NSString *check_date = @"";
+//    
+//    int avrHr = 0;
+//    int maxHr = 0;
+//    int minHr = 200;
+//    int totHR = 0;
+//    NSString *hrValArr = @"";
+//    
+//    if (self.listData.count > 0) {
+//        NSDictionary *map = self.listData[0];
+//        NSString *time2 = map[@"date"];
+//        check_date = [time2 substringWithRange:NSMakeRange(0, 10)];
+//    }
+//    
+//    for (int i = 0; i < self.listData.count; i++) {
+//        NSDictionary *map = self.listData[i];
+//        time = map[@"date"];
+//        
+//        NSString *strDate = [time substringWithRange:NSMakeRange(0, 10)];
+//        if ([strDate isEqualToString:check_date]) {
+//            ActivityMode = map[@"activityMode"];
+//            heartValue = map[@"heartRate"];
+//            HR = heartValue.intValue;
+//            actTm = map[@"activeMinutes"];
+//            iActTm = actTm.intValue;
+//            step = map[@"step"];
+//            iStep = step.intValue;
+//            paceMinutes = map[@"paceMinutes"];
+//            iPaceMinutes = paceMinutes.intValue;
+//            paceSeconds = map[@"paceSeconds"];
+//            iPaceSeconds = paceSeconds.intValue;
+//            distance = map[@"distance"];
+//            iDistance = (int)(distance.doubleValue * 1000);
+//            cal = map[@"calories"];
+//            dCal = cal.doubleValue;
+//            [arrHR addObject:[NSNumber numberWithInt:HR]];
+//        }
+//    }
+//    
+//    for (int k = 0; k <arrHR.count; k++) {
+//        NSNumber *HR = arrHR[k];
+//        int nHr = [HR intValue];
+//        if (maxHr < nHr) {
+//            maxHr = nHr;
+//        }
+//        if (minHr > nHr) {
+//            minHr = nHr;
+//        }
+//        totHR += nHr;
+//        
+//        if (k == 0) {
+//            hrValArr = [NSString stringWithFormat:@"%d", nHr];
+//        }
+//        else {
+//            NSString *strTemp = [NSString stringWithFormat:@",%d", nHr];
+//            hrValArr = [hrValArr stringByAppendingString:strTemp];
+//        }
+//    }
+//    avrHr = totHR / arrHR.count;
+//    
+//    NSArray *excsDate = [time componentsSeparatedByString:@" "];
+//    
+//    NSString *endDateString = [self getEndDate:time duration:iActTm];
+//    NSArray *endDateComponents = [endDateString componentsSeparatedByString:@" "];
+//    
+//    NSString *combinedPace = [NSString stringWithFormat:@"%d.%02d", iPaceMinutes, iPaceSeconds];
+//    
+//    NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init];
+//    formatter.numberStyle = NSNumberFormatterDecimalStyle;
+//    NSNumber *numericValue = [formatter numberFromString:combinedPace];
+//    double iPacedouble = [numericValue doubleValue];
+//    
+//    [self.excsStatus setExcsStartDe:[excsDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
+//    [self.excsStatus setExcsStartTm:[excsDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
+//    [self.excsStatus setExcsEndDe:[endDateComponents[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
+//    [self.excsStatus setExcsEndTm:[endDateComponents[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
+//    [self.excsStatus setExcsCnt:[NSNumber numberWithInt:iStep]];
+//    [self.excsStatus setExcsDstc:[NSNumber numberWithInt:iDistance]];
+//    [self.excsStatus setExcsTm:[NSNumber numberWithInt:iActTm]];
+//    [self.excsStatus setRestTm:@0];
+//    [self.excsStatus setMaxCal:@0];
+//    [self.excsStatus setTotCal:[NSNumber numberWithInt:dCal]];
+//    [self.excsStatus setMaxPace:[NSNumber numberWithDouble:iPacedouble]]; // iPaceMinutes'iPaceSeconds 로 변경하기
+//    [self.excsStatus setAvgPace:[NSNumber numberWithDouble:iPacedouble]]; // iPaceMinutes'iPaceSeconds 로 변경하기
+//    [self.excsStatus setMaxAltitude:@0];
+//    [self.excsStatus setAvgAltitude:@0];
+//    [self.excsStatus setMaxPitch:@0];
+//    [self.excsStatus setAvgPitch:@0];
+//    [self.excsStatus setMinHeartRate:[NSNumber numberWithInt:minHr]];
+//    [self.excsStatus setMaxHeartRate:[NSNumber numberWithInt:maxHr]];
+//    [self.excsStatus setAvgHeartRate:[NSNumber numberWithInt:avrHr]];
+//    [self.excsStatus setAutoManuClf:@"M"];
+//    /*
+//    if ([ActivityMode isEqualToString:@"Run"]) {
+//        [self.excsStatus setExcsClf:@(Run)];
+//    } else if ([ActivityMode isEqualToString:@"Cycle"]) {
+//        [self.excsStatus setExcsClf:@(Cycling)];
+//    } else {
+//        [self.excsStatus setExcsClf:@(Walk)];
+//    }
+//    */
+//    [jBleManager deviceSyncData:self.excsStatus deviceType:JENUMDeviceServiceTypePedometer];
+//    self.dataCount = 0;
+//    [self.listData removeAllObjects];
+//}
 
 - (NSString *)getEndDate:(NSString *)startDate duration:(NSInteger)exTimeSecond {
     NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];

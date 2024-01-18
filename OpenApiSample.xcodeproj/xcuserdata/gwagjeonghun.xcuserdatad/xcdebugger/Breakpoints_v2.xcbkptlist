@@ -7,16 +7,16 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "C3B9F36F-8B25-48A2-B4DE-443564CE1DEA"
+            uuid = "3685A99F-EA65-40FC-9B3C-13F444985930"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "OpenApiSample/Bluetooth/ranix/J2203Device.m"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "484"
-            endingLineNumber = "484"
-            landmarkName = "-parseRecvData:"
+            startingLineNumber = "955"
+            endingLineNumber = "955"
+            landmarkName = "-parseDynamicHRDataValues"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
