@@ -42,6 +42,10 @@
 //내가 추가한 것
 @property (nonatomic, strong) ExcsStatus *excsStatus;
 @property (nonatomic, strong) HeartRateArr *arrDynamic;
+
+@property (nonatomic, strong) NSString *hrValArrGlobal;
+@property (nonatomic, strong) NSString *last_dateGlobal;
+
 @end
 
 @implementation J2203Device
@@ -498,8 +502,8 @@
     BOOL end = deviceData.dataEnd;
     
     if(deviceData.dataType == SetDeviceTime) {
-        //기존 순서 1. Single HR 2. Act 3. Excs 4. Dynamic HR
-        [self readHeartRate:DEVICE_DATA_MODE_START];
+        //변경 순서 1. Dynamic HR 2. Single HR 3. Act 4. Excs
+        [self readDynamicHRData:DEVICE_DATA_MODE_START];
     }
     else if(deviceData.dataType == SetNotify) {
         [jBleManager changeUpdateText:@"SetNotify"];
@@ -655,6 +659,125 @@
     }
 }
 
+//- (void)parseStaticHrValues {
+//    NSString *time = @"";
+//    NSString *heartValue = @"";
+//    NSString *hrValArr = @"";
+//    int avrHr = 0;
+//    int maxHr = 0;
+//    int minHr = 200;
+//    int totHR = 0;
+//    int hr = 0;
+//    NSString *last_date = @"";
+//    NSString *check_date = @"";
+//
+//    NSMutableArray *endTmArray = [[NSMutableArray alloc] init];
+//    NSMutableArray *arrHR = [[NSMutableArray alloc] init];
+//
+//    //내가 추가한 것
+//    NSString *check_date_global = @"";
+//    //NSLog(@"HrGlobal : %@, LDGlobal : %@", self.hrValArrGlobal, self.last_dateGlobal);
+//    check_date_global = [self.last_dateGlobal substringWithRange:NSMakeRange(0, 10)];
+//    //NSLog(@"check_date_global : %@", check_date_global);
+//
+//    NSArray *values = [self.hrValArrGlobal componentsSeparatedByString:@","];
+//    NSMutableArray *nonZeroValues = [NSMutableArray array];
+//    NSInteger numberOfNonZeroValues = 0;
+//
+//    if (self.listData.count == 0) // single HR 리스트에 없을 때 Continuous HR 갖고와서 강제로 추가
+//    {
+//        last_date = self.last_dateGlobal;
+//        hrValArr = self.hrValArrGlobal;
+//
+//        for (NSString *value in values) {
+//            NSInteger intValue = [value integerValue];
+//            if (intValue != 0) {
+//                numberOfNonZeroValues++;
+//                [nonZeroValues addObject:@(intValue)];
+//            }
+//        }
+//        NSNumber *maxValue = [nonZeroValues valueForKeyPath:@"@max.intValue"];
+//        NSNumber *minValue = [nonZeroValues valueForKeyPath:@"@min.intValue"];
+//        NSNumber *averageValue = [nonZeroValues valueForKeyPath:@"@avg.intValue"];
+//        int averageIntValue = (int)round([averageValue doubleValue]);
+//
+//        NSArray *arrDate = [last_date componentsSeparatedByString:@" "];
+//        [self.arrHeartRate setStartTm:[arrDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
+//        [self.arrHeartRate setStartDe:[arrDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
+//        [self.arrHeartRate setCollectTime:[NSNumber numberWithInt:5]];
+//        [self.arrHeartRate setMaxHeartRate:maxValue];
+//        [self.arrHeartRate setMinHeartRate:minValue];
+//        [self.arrHeartRate setAvgHeartRate:[NSNumber numberWithInt:averageIntValue]];
+//        [self.arrHeartRate setHeartRateCnt:[NSNumber numberWithInt:numberOfNonZeroValues]];
+//        [self.arrHeartRate setHeartRateList:hrValArr];
+//    }
+//    // single HR 리스트가 존재할 때 1.continuous HR 날짜보다 single HR 날짜가 과거일 때 continuous HR 값을 강제로 넣기(O) 2. 날짜가 같을 때 continuous HR 값을 single HR에 추가하기(O, 완료)
+//    if (self.listData.count > 0) {
+//        NSDictionary *map = self.listData[0];
+//        NSString *time2 = map[@"date"];
+//        check_date = [time2 substringWithRange:NSMakeRange(0, 10)];
+//        last_date = time2;
+//
+//        for (int i = 0; i < self.listData.count; i++) {
+//            NSDictionary *map = self.listData[i];
+//            time = map[@"date"];
+//            heartValue = map[@"singleHR"];
+//            hr = heartValue.intValue;
+//
+//            NSString *strDate = [time substringWithRange:NSMakeRange(0, 10)];
+//            if ([strDate isEqualToString:check_date]) {
+//                [arrHR addObject:[NSNumber numberWithInt:hr]];
+//            }
+//        }
+//
+//        for (NSString *value in values) {
+//            NSInteger intValue = [value integerValue];
+//            if (intValue != 0) {
+//                [arrHR addObject:@(intValue)];
+//            }
+//        }
+//
+//        for (int k = 0; k < arrHR.count; k++) {
+//            NSNumber *hr = arrHR[k];
+//            int nHr = [hr intValue];
+//            if (maxHr < nHr) {
+//                maxHr = nHr;
+//            }
+//            if (minHr > nHr) {
+//                minHr = nHr;
+//            }
+//            totHR += nHr;
+//
+//            if (k == 0) {
+//                hrValArr = [NSString stringWithFormat:@"%d", nHr];
+//            }
+//            else {
+//                NSString *strTemp = [NSString stringWithFormat:@",%d", nHr];
+//                hrValArr = [hrValArr stringByAppendingString:strTemp];
+//            }
+//        }
+//        avrHr = totHR / arrHR.count;
+//
+//        NSArray *arrDate = [last_date componentsSeparatedByString:@" "];
+//        [self.arrHeartRate setStartTm:[arrDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
+//        [self.arrHeartRate setStartDe:[arrDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
+//        [self.arrHeartRate setCollectTime:[NSNumber numberWithInt:5]];
+//        [self.arrHeartRate setMaxHeartRate:[NSNumber numberWithInt:maxHr]];
+//        [self.arrHeartRate setMinHeartRate:[NSNumber numberWithInt:minHr]];
+//        [self.arrHeartRate setAvgHeartRate:[NSNumber numberWithInt:avrHr]];
+//        [self.arrHeartRate setHeartRateCnt:[NSNumber numberWithInt:arrHR.count]];
+//        [self.arrHeartRate setHeartRateList:hrValArr];
+//    }
+//
+//
+//
+//    [jBleManager deviceSyncData:self.arrHeartRate deviceType:JENUMDeviceServiceTypePedometer];
+//
+//    self.dataCount = 0;
+//    [self.listData removeAllObjects];
+//    [self readDetailAct:DEVICE_DATA_MODE_START];
+//}
+
 - (void)parseStaticHrValues {
     NSString *time = @"";
     NSString *heartValue = @"";
@@ -670,56 +793,110 @@
     NSMutableArray *endTmArray = [[NSMutableArray alloc] init];
     NSMutableArray *arrHR = [[NSMutableArray alloc] init];
     
+    //내가 추가한 것
+    NSString *check_date_global = @"";
+    //NSLog(@"HrGlobal : %@, LDGlobal : %@", self.hrValArrGlobal, self.last_dateGlobal);
+    check_date_global = [self.last_dateGlobal substringWithRange:NSMakeRange(0, 10)];
+    //NSLog(@"check_date_global : %@", check_date_global);
+    
+    NSArray *values = [self.hrValArrGlobal componentsSeparatedByString:@","];
+    NSMutableArray *nonZeroValues = [NSMutableArray array];
+    NSInteger numberOfNonZeroValues = 0;
+
+    // single HR 리스트가 없을 때 Continuous HR 갖고와서 오늘 날짜와 같으면 강제로 추가
+    if (self.listData.count == 0) {
+        if ([check_date_global isEqualToString:[self getToday]]) {
+            last_date = self.last_dateGlobal;
+            hrValArr = self.hrValArrGlobal;
+            
+            for (NSString *value in values) {
+                NSInteger intValue = [value integerValue];
+                if (intValue != 0) {
+                    numberOfNonZeroValues++;
+                    [nonZeroValues addObject:@(intValue)];
+                }
+            }
+            NSNumber *maxValue = [nonZeroValues valueForKeyPath:@"@max.intValue"];
+            NSNumber *minValue = [nonZeroValues valueForKeyPath:@"@min.intValue"];
+            NSNumber *averageValue = [nonZeroValues valueForKeyPath:@"@avg.intValue"];
+            int averageIntValue = (int)round([averageValue doubleValue]);
+            
+            NSArray *arrDate = [last_date componentsSeparatedByString:@" "];
+            [self.arrHeartRate setStartTm:[arrDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
+            [self.arrHeartRate setStartDe:[arrDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
+            [self.arrHeartRate setCollectTime:[NSNumber numberWithInt:5]];
+            [self.arrHeartRate setMaxHeartRate:maxValue];
+            [self.arrHeartRate setMinHeartRate:minValue];
+            [self.arrHeartRate setAvgHeartRate:[NSNumber numberWithInt:averageIntValue]];
+            [self.arrHeartRate setHeartRateCnt:[NSNumber numberWithInt:numberOfNonZeroValues]];
+            [self.arrHeartRate setHeartRateList:hrValArr];
+        }
+    }
+    // single HR 리스트가 존재할 때
+    // 1. 당일 Single HR 데이터가 있고 당일 Continuous HR이 없을 때 Single HR만 전달
+    // 2. 당일 Single HR 데이터가 없고 당일 Continuous HR만 존재하면 Continuous HR만 전달
+    // 3. 당일 Single HR 데이터가 있고 당일 Continuyous도 존재하면 Single HR + Continuous HR 붙여서 전달
     if (self.listData.count > 0) {
         NSDictionary *map = self.listData[0];
         NSString *time2 = map[@"date"];
         check_date = [time2 substringWithRange:NSMakeRange(0, 10)];
         last_date = time2;
-    }
-    
-    for (int i = 0; i < self.listData.count; i++) {
-        NSDictionary *map = self.listData[i];
-        time = map[@"date"];
-        heartValue = map[@"singleHR"];
-        hr = heartValue.intValue;
+
+        for (int i = 0; i < self.listData.count; i++) {
+            NSDictionary *map = self.listData[i];
+            time = map[@"date"];
+            heartValue = map[@"singleHR"];
+            hr = heartValue.intValue;
+
+            NSString *strDate = [time substringWithRange:NSMakeRange(0, 10)];
+            // 당일 Single HR 데이터가 있을 때
+            if ([strDate isEqualToString:[self getToday]]) {
+                [arrHR addObject:[NSNumber numberWithInt:hr]];
+            }
+            // 당일 Single HR 데이터가 없을 때
+        }
+        // 당일 Continuous HR이 있을 때 Single HR + Continuous HR 전달
+        if ([check_date_global isEqualToString:[self getToday]]) {
+            for (NSString *value in values) {
+                NSInteger intValue = [value integerValue];
+                if (intValue != 0) {
+                    [arrHR addObject:@(intValue)];
+                }
+            }
+        }
         
-        NSString *strDate = [time substringWithRange:NSMakeRange(0, 10)];
-        if ([strDate isEqualToString:check_date]) {
-            [arrHR addObject:[NSNumber numberWithInt:hr]];
+        for (int k = 0; k < arrHR.count; k++) {
+            NSNumber *hr = arrHR[k];
+            int nHr = [hr intValue];
+            if (maxHr < nHr) {
+                maxHr = nHr;
+            }
+            if (minHr > nHr) {
+                minHr = nHr;
+            }
+            totHR += nHr;
+
+            if (k == 0) {
+                hrValArr = [NSString stringWithFormat:@"%d", nHr];
+            }
+            else {
+                NSString *strTemp = [NSString stringWithFormat:@",%d", nHr];
+                hrValArr = [hrValArr stringByAppendingString:strTemp];
+            }
         }
+        avrHr = totHR / arrHR.count;
+
+        NSArray *arrDate = [last_date componentsSeparatedByString:@" "];
+        [self.arrHeartRate setStartTm:[arrDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
+        [self.arrHeartRate setStartDe:[arrDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
+        [self.arrHeartRate setCollectTime:[NSNumber numberWithInt:5]];
+        [self.arrHeartRate setMaxHeartRate:[NSNumber numberWithInt:maxHr]];
+        [self.arrHeartRate setMinHeartRate:[NSNumber numberWithInt:minHr]];
+        [self.arrHeartRate setAvgHeartRate:[NSNumber numberWithInt:avrHr]];
+        [self.arrHeartRate setHeartRateCnt:[NSNumber numberWithInt:arrHR.count]];
+        [self.arrHeartRate setHeartRateList:hrValArr];
+
     }
-    
-    for (int k = 0; k < arrHR.count; k++) {
-        NSNumber *hr = arrHR[k];
-        int nHr = [hr intValue];
-        if (maxHr < nHr) {
-            maxHr = nHr;
-        }
-        if (minHr > nHr) {
-            minHr = nHr;
-        }
-        totHR += nHr;
-        
-        if (k == 0) {
-            hrValArr = [NSString stringWithFormat:@"%d", nHr];
-        }
-        else {
-            NSString *strTemp = [NSString stringWithFormat:@",%d", nHr];
-            hrValArr = [hrValArr stringByAppendingString:strTemp];
-        }
-    }
-    avrHr = totHR / arrHR.count;
-    
-    NSArray *arrDate = [last_date componentsSeparatedByString:@" "];
-    [self.arrHeartRate setStartTm:[arrDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
-    [self.arrHeartRate setStartDe:[arrDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
-    [self.arrHeartRate setCollectTime:[NSNumber numberWithInt:5]];
-    [self.arrHeartRate setMaxHeartRate:[NSNumber numberWithInt:maxHr]];
-    [self.arrHeartRate setMinHeartRate:[NSNumber numberWithInt:minHr]];
-    [self.arrHeartRate setAvgHeartRate:[NSNumber numberWithInt:avrHr]];
-    [self.arrHeartRate setHeartRateCnt:[NSNumber numberWithInt:arrHR.count]];
-    [self.arrHeartRate setHeartRateList:hrValArr];
-    
     [jBleManager deviceSyncData:self.arrHeartRate deviceType:JENUMDeviceServiceTypePedometer];
     
     self.dataCount = 0;
@@ -933,8 +1110,8 @@
     [jBleManager deviceSyncData:self.excsStatus deviceType:JENUMDeviceServiceTypePedometer]; // 최근 데이터만 출력할 때
     self.dataCount = 0;
     [self.listData removeAllObjects];
-    [self readDynamicHRData:DEVICE_DATA_MODE_START];
 }
+
 - (void)parseDynamicHRDataValues {
     NSString *time = @"";
     NSString *heartValue = @"";
@@ -956,6 +1133,7 @@
         NSString *time2 = map[@"date"];
         check_date = [time2 substringWithRange:NSMakeRange(0, 10)];
         last_date = time2;
+        self.last_dateGlobal = last_date;
     }
     
     for (int i = 0; i < self.listData.count; i++) {
@@ -995,67 +1173,70 @@
         else {
             NSString *strTemp = [NSString stringWithFormat:@",%d", nHr];
             hrValArr = [hrValArr stringByAppendingString:strTemp];
+            self.hrValArrGlobal = hrValArr;
         }
     }
     avrHr = totHR / nonZeroCount;
     
-    NSArray *arrDate = [last_date componentsSeparatedByString:@" "];
-    [self.arrDynamic setStartTm:[arrDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
-    [self.arrDynamic setStartDe:[arrDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
-    [self.arrDynamic setCollectTime:[NSNumber numberWithInt:5]];
-    [self.arrDynamic setMaxHeartRate:[NSNumber numberWithInt:maxHr]];
-    [self.arrDynamic setMinHeartRate:[NSNumber numberWithInt:minHr]];
-    [self.arrDynamic setAvgHeartRate:[NSNumber numberWithInt:avrHr]];
-    [self.arrDynamic setHeartRateCnt:[NSNumber numberWithInt:arrHR.count]];
-    [self.arrDynamic setHeartRateList:hrValArr];
-    
-    [jBleManager deviceSyncData:self.arrDynamic deviceType:JENUMDeviceServiceTypePedometer];
+//    NSArray *arrDate = [last_date componentsSeparatedByString:@" "];
+//    [self.arrDynamic setStartTm:[arrDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
+//    [self.arrDynamic setStartDe:[arrDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
+//    [self.arrDynamic setCollectTime:[NSNumber numberWithInt:5]];
+//    [self.arrDynamic setMaxHeartRate:[NSNumber numberWithInt:maxHr]];
+//    [self.arrDynamic setMinHeartRate:[NSNumber numberWithInt:minHr]];
+//    [self.arrDynamic setAvgHeartRate:[NSNumber numberWithInt:avrHr]];
+//    [self.arrDynamic setHeartRateCnt:[NSNumber numberWithInt:arrHR.count]];
+//    [self.arrDynamic setHeartRateList:hrValArr];
+//
+//    [jBleManager deviceSyncData:self.arrDynamic deviceType:JENUMDeviceServiceTypePedometer];
     
     self.dataCount = 0;
     [self.listData removeAllObjects];
+    [self readHeartRate:DEVICE_DATA_MODE_START];
 }
+
 //- (void)parseActivityModeDataValues {
 //    NSString *time = @"";
 //    int HR = 0;
-//    
+//
 //    NSString *step = @"";
 //    int iStep = 0;
 //    NSString *distance = @"";
 //    int iDistance = 0;
 //    NSString *cal = @"";
 //    double dCal = 0.0;
-//    
+//
 //    NSString *heartValue = @"";
 //    NSString *paceMinutes = @"";
 //    int iPaceMinutes = 0;
 //    NSString *paceSeconds = @"";
 //    int iPaceSeconds = 0;
-//    
+//
 //    NSMutableArray *arrPace = [[NSMutableArray alloc] init];
 //    NSMutableArray *arrHR = [[NSMutableArray alloc] init];
-//    
+//
 //    NSString *actTm = @"";
 //    int iActTm = 0;
 //    NSString *ActivityMode = @"";
-//    
+//
 //    NSString *check_date = @"";
-//    
+//
 //    int avrHr = 0;
 //    int maxHr = 0;
 //    int minHr = 200;
 //    int totHR = 0;
 //    NSString *hrValArr = @"";
-//    
+//
 //    if (self.listData.count > 0) {
 //        NSDictionary *map = self.listData[0];
 //        NSString *time2 = map[@"date"];
 //        check_date = [time2 substringWithRange:NSMakeRange(0, 10)];
 //    }
-//    
+//
 //    for (int i = 0; i < self.listData.count; i++) {
 //        NSDictionary *map = self.listData[i];
 //        time = map[@"date"];
-//        
+//
 //        NSString *strDate = [time substringWithRange:NSMakeRange(0, 10)];
 //        if ([strDate isEqualToString:check_date]) {
 //            ActivityMode = map[@"activityMode"];
@@ -1076,7 +1257,7 @@
 //            [arrHR addObject:[NSNumber numberWithInt:HR]];
 //        }
 //    }
-//    
+//
 //    for (int k = 0; k <arrHR.count; k++) {
 //        NSNumber *HR = arrHR[k];
 //        int nHr = [HR intValue];
@@ -1087,7 +1268,7 @@
 //            minHr = nHr;
 //        }
 //        totHR += nHr;
-//        
+//
 //        if (k == 0) {
 //            hrValArr = [NSString stringWithFormat:@"%d", nHr];
 //        }
@@ -1097,19 +1278,19 @@
 //        }
 //    }
 //    avrHr = totHR / arrHR.count;
-//    
+//
 //    NSArray *excsDate = [time componentsSeparatedByString:@" "];
-//    
+//
 //    NSString *endDateString = [self getEndDate:time duration:iActTm];
 //    NSArray *endDateComponents = [endDateString componentsSeparatedByString:@" "];
-//    
+//
 //    NSString *combinedPace = [NSString stringWithFormat:@"%d.%02d", iPaceMinutes, iPaceSeconds];
-//    
+//
 //    NSNumberFormatter *formatter = [[NSNumberFormatter alloc] init];
 //    formatter.numberStyle = NSNumberFormatterDecimalStyle;
 //    NSNumber *numericValue = [formatter numberFromString:combinedPace];
 //    double iPacedouble = [numericValue doubleValue];
-//    
+//
 //    [self.excsStatus setExcsStartDe:[excsDate[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
 //    [self.excsStatus setExcsStartTm:[excsDate[1] stringByReplacingOccurrencesOfString:@":" withString:@""]];
 //    [self.excsStatus setExcsEndDe:[endDateComponents[0] stringByReplacingOccurrencesOfString:@"." withString:@""]];
@@ -1156,6 +1337,15 @@
     }
     
     return @"";
+}
+
+- (NSString *)getToday {
+    NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
+    [dateFormat setDateFormat:@"yyyy.MM.dd HH:mm:ss"];
+    NSDate *date = [NSDate date];
+    NSString *sToday = [dateFormat stringFromDate:date];
+    
+    return [sToday substringWithRange:NSMakeRange(0, 10)];
 }
 
 -(int)getTimeByArr:(NSString *)stepArr {
